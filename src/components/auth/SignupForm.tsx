@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, updateProfile } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/config';
-import { doc, setDoc, getDoc } from 'firebase/firestore'; // Added getDoc
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
@@ -70,10 +70,17 @@ export function SignupForm() {
       toast({ title: 'Success', description: 'Account created successfully!' });
       router.push('/dashboard');
     } catch (error: any) {
+      console.error("Detailed email/password signup error:", error);
+      let description = 'An unexpected error occurred. Please check the console for more details.';
+      if (error.code && error.message) {
+        description = `Error: ${error.message} (Code: ${error.code})`;
+      } else if (error.message) {
+        description = error.message;
+      }
       toast({
         variant: 'destructive',
         title: 'Signup Failed',
-        description: error.message || 'An unexpected error occurred.',
+        description: description,
       });
     } finally {
       setIsLoading(false);
@@ -88,21 +95,26 @@ export function SignupForm() {
       const user = result.user;
 
       const userDocRef = doc(db, 'users', user.uid);
-      const userDocSnap = await getDoc(userDocRef); // Correctly use getDoc
+      const userDocSnap = await getDoc(userDocRef);
 
-      if (!userDocSnap.exists()) { // Check existence on the snapshot
-        // New user via Google, role defaults to student.
-        // displayName and photoURL from Google profile are used by createUserDocument.
+      if (!userDocSnap.exists()) {
         await createUserDocument(user, { role: 'student' });
       }
       
       toast({ title: 'Success', description: 'Signed up with Google successfully!' });
       router.push('/dashboard');
     } catch (error: any) {
+      console.error("Detailed Google sign-up error:", error);
+      let description = 'An unexpected error occurred. Please check the console for more details.';
+      if (error.code && error.message) {
+        description = `Error: ${error.message} (Code: ${error.code})`;
+      } else if (error.message) {
+        description = error.message;
+      }
       toast({
         variant: 'destructive',
         title: 'Google Sign-Up Failed',
-        description: error.message || 'An unexpected error occurred.',
+        description: description,
       });
     } finally {
       setIsGoogleLoading(false);
