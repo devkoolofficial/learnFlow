@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -17,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, updateProfile } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/config';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore'; // Added getDoc
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
@@ -83,18 +84,15 @@ export function SignupForm() {
     setIsGoogleLoading(true);
     const provider = new GoogleAuthProvider();
     try {
-      // Prompt user for role before Google Sign-In or handle it post-signin
-      // For simplicity, default to student or have a separate step if role is crucial at Google sign-up
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      // Check if user exists, if not, create doc with a default role or prompt for it
       const userDocRef = doc(db, 'users', user.uid);
-      const userDoc = await import('firebase/firestore').then(mod => mod.getDoc(userDocRef));
+      const userDocSnap = await getDoc(userDocRef); // Correctly use getDoc
 
-      if (!userDoc.exists()) {
-        // New user via Google, prompt for role or default. For now, default to student.
-        // A better UX would be a modal to select role after Google sign-in if new.
+      if (!userDocSnap.exists()) { // Check existence on the snapshot
+        // New user via Google, role defaults to student.
+        // displayName and photoURL from Google profile are used by createUserDocument.
         await createUserDocument(user, { role: 'student' });
       }
       
